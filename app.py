@@ -3,20 +3,359 @@ import requests
 from google import genai
 
 
-# --------------------------------------------------
+# =========================================================
 # PAGE CONFIGURATION
-# --------------------------------------------------
+# =========================================================
 
 st.set_page_config(
     page_title="AI Live Situation Intelligence",
     page_icon="🌍",
-    layout="wide"
+    layout="wide",
+    initial_sidebar_state="collapsed"
 )
 
 
-# --------------------------------------------------
-# API CONFIGURATION
-# --------------------------------------------------
+# =========================================================
+# CUSTOM GLASSMORPHISM THEME
+# =========================================================
+
+st.markdown(
+    """
+    <style>
+
+    /* -----------------------------------------------------
+       GLOBAL APP
+    ----------------------------------------------------- */
+
+    .stApp {
+        background:
+            radial-gradient(
+                circle at 10% 10%,
+                rgba(124, 58, 237, 0.30),
+                transparent 30%
+            ),
+            radial-gradient(
+                circle at 90% 20%,
+                rgba(99, 102, 241, 0.20),
+                transparent 28%
+            ),
+            radial-gradient(
+                circle at 50% 100%,
+                rgba(168, 85, 247, 0.18),
+                transparent 35%
+            ),
+            linear-gradient(
+                135deg,
+                #080414 0%,
+                #110725 45%,
+                #1b0b38 100%
+            );
+
+        color: #f8f7ff;
+        min-height: 100vh;
+    }
+
+
+    /* -----------------------------------------------------
+       FORCE DARK THEME
+    ----------------------------------------------------- */
+
+    html,
+    body,
+    [data-testid="stAppViewContainer"],
+    [data-testid="stHeader"] {
+        background: transparent !important;
+    }
+
+    [data-testid="stAppViewContainer"] {
+        color: #f8f7ff !important;
+    }
+
+    [data-testid="stHeader"] {
+        background: rgba(0, 0, 0, 0) !important;
+    }
+
+
+    /* -----------------------------------------------------
+       MAIN CONTENT WIDTH
+    ----------------------------------------------------- */
+
+    .block-container {
+        max-width: 1200px;
+        padding-top: 2.5rem;
+        padding-bottom: 3rem;
+    }
+
+
+    /* -----------------------------------------------------
+       HEADER
+    ----------------------------------------------------- */
+
+    .main-title {
+        text-align: center;
+        font-size: 3rem;
+        font-weight: 800;
+        letter-spacing: -1px;
+        margin-bottom: 0.3rem;
+
+        background:
+            linear-gradient(
+                90deg,
+                #ffffff,
+                #d8b4fe,
+                #a78bfa,
+                #93c5fd
+            );
+
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    .subtitle {
+        text-align: center;
+        color: #c4b5fd;
+        font-size: 1.05rem;
+        margin-bottom: 2rem;
+    }
+
+
+    /* -----------------------------------------------------
+       GLASS CARDS
+    ----------------------------------------------------- */
+
+    .glass-card {
+        background: rgba(255, 255, 255, 0.065);
+        border: 1px solid rgba(255, 255, 255, 0.13);
+        border-radius: 22px;
+        padding: 24px;
+        margin-bottom: 20px;
+
+        backdrop-filter: blur(18px);
+        -webkit-backdrop-filter: blur(18px);
+
+        box-shadow:
+            0 8px 32px rgba(0, 0, 0, 0.30),
+            inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    }
+
+
+    /* -----------------------------------------------------
+       SECTION HEADINGS
+    ----------------------------------------------------- */
+
+    .section-title {
+        color: #e9d5ff;
+        font-size: 1.25rem;
+        font-weight: 700;
+        margin-bottom: 12px;
+    }
+
+
+    /* -----------------------------------------------------
+       STREAMLIT TEXT INPUTS
+    ----------------------------------------------------- */
+
+    div[data-baseweb="input"] {
+        background: rgba(255, 255, 255, 0.07) !important;
+        border: 1px solid rgba(255, 255, 255, 0.15) !important;
+        border-radius: 14px !important;
+    }
+
+    div[data-baseweb="input"]:focus-within {
+        border: 1px solid rgba(167, 139, 250, 0.8) !important;
+        box-shadow: 0 0 0 1px rgba(167, 139, 250, 0.25) !important;
+    }
+
+    div[data-baseweb="input"] input {
+        color: #ffffff !important;
+        background: transparent !important;
+    }
+
+    div[data-baseweb="input"] input::placeholder {
+        color: #a8a0bd !important;
+    }
+
+
+    /* -----------------------------------------------------
+       BUTTON
+    ----------------------------------------------------- */
+
+    div.stButton > button {
+        width: 100%;
+        min-height: 52px;
+
+        border: none !important;
+        border-radius: 15px !important;
+
+        background:
+            linear-gradient(
+                135deg,
+                #7c3aed,
+                #8b5cf6,
+                #6366f1
+            ) !important;
+
+        color: white !important;
+        font-size: 1rem !important;
+        font-weight: 700 !important;
+
+        box-shadow:
+            0 8px 25px rgba(124, 58, 237, 0.35);
+
+        transition: all 0.25s ease;
+    }
+
+    div.stButton > button:hover {
+        transform: translateY(-2px);
+
+        box-shadow:
+            0 12px 30px rgba(124, 58, 237, 0.50);
+    }
+
+
+    /* -----------------------------------------------------
+       METRIC CARDS
+    ----------------------------------------------------- */
+
+    div[data-testid="metric-container"] {
+        background: rgba(255, 255, 255, 0.065) !important;
+
+        border: 1px solid rgba(255, 255, 255, 0.12) !important;
+
+        border-radius: 18px !important;
+
+        padding: 18px !important;
+
+        backdrop-filter: blur(15px);
+        -webkit-backdrop-filter: blur(15px);
+
+        box-shadow:
+            0 8px 25px rgba(0, 0, 0, 0.20);
+    }
+
+    div[data-testid="stMetricLabel"] {
+        color: #c4b5fd !important;
+    }
+
+    div[data-testid="stMetricValue"] {
+        color: #ffffff !important;
+        font-weight: 700 !important;
+    }
+
+
+    /* -----------------------------------------------------
+       SUCCESS / INFO / WARNING / ERROR
+    ----------------------------------------------------- */
+
+    div[data-testid="stAlert"] {
+        border-radius: 15px !important;
+
+        background: rgba(255, 255, 255, 0.07) !important;
+
+        border: 1px solid rgba(255, 255, 255, 0.12) !important;
+
+        backdrop-filter: blur(15px);
+        -webkit-backdrop-filter: blur(15px);
+    }
+
+
+    /* -----------------------------------------------------
+       AI ANALYSIS
+    ----------------------------------------------------- */
+
+    .ai-card {
+        background:
+            linear-gradient(
+                135deg,
+                rgba(124, 58, 237, 0.14),
+                rgba(99, 102, 241, 0.07)
+            );
+
+        border: 1px solid rgba(167, 139, 250, 0.25);
+
+        border-radius: 22px;
+
+        padding: 28px;
+
+        margin-top: 10px;
+
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+
+        box-shadow:
+            0 10px 40px rgba(0, 0, 0, 0.28);
+    }
+
+
+    /* -----------------------------------------------------
+       MARKDOWN TEXT
+    ----------------------------------------------------- */
+
+    [data-testid="stMarkdownContainer"] p,
+    [data-testid="stMarkdownContainer"] li {
+        color: #e9e7f2;
+    }
+
+    [data-testid="stMarkdownContainer"] strong {
+        color: #ffffff;
+    }
+
+    h1, h2, h3, h4 {
+        color: #ffffff !important;
+    }
+
+
+    /* -----------------------------------------------------
+       DIVIDER
+    ----------------------------------------------------- */
+
+    hr {
+        border-color: rgba(255, 255, 255, 0.10) !important;
+    }
+
+
+    /* -----------------------------------------------------
+       FOOTER
+    ----------------------------------------------------- */
+
+    .footer {
+        text-align: center;
+        color: #8f87a8;
+        font-size: 0.85rem;
+        margin-top: 30px;
+    }
+
+
+    /* -----------------------------------------------------
+       MOBILE RESPONSIVENESS
+    ----------------------------------------------------- */
+
+    @media (max-width: 768px) {
+
+        .block-container {
+            padding-left: 1rem;
+            padding-right: 1rem;
+        }
+
+        .main-title {
+            font-size: 2.1rem;
+        }
+
+        .subtitle {
+            font-size: 0.95rem;
+        }
+
+    }
+
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
+
+# =========================================================
+# API KEYS
+# =========================================================
 
 GEMINI_API_KEY = st.secrets["GEMINI_API_KEY"]
 WEATHER_API_KEY = st.secrets["WEATHER_API_KEY"]
@@ -24,9 +363,9 @@ WEATHER_API_KEY = st.secrets["WEATHER_API_KEY"]
 client = genai.Client(api_key=GEMINI_API_KEY)
 
 
-# --------------------------------------------------
-# GET LOCATION FROM CITY NAME
-# --------------------------------------------------
+# =========================================================
+# LOCATION FUNCTION
+# =========================================================
 
 def get_location(city):
 
@@ -38,30 +377,40 @@ def get_location(city):
         "appid": WEATHER_API_KEY
     }
 
-    response = requests.get(url, params=params)
+    try:
 
-    if response.status_code != 200:
-        return None, "Unable to find the location."
+        response = requests.get(
+            url,
+            params=params,
+            timeout=15
+        )
 
-    data = response.json()
+        if response.status_code != 200:
+            return None, "Unable to find the location."
 
-    if not data:
-        return None, "City not found. Please enter a valid city."
+        data = response.json()
 
-    location = {
-        "name": data[0]["name"],
-        "country": data[0].get("country", ""),
-        "state": data[0].get("state", ""),
-        "latitude": data[0]["lat"],
-        "longitude": data[0]["lon"]
-    }
+        if not data:
+            return None, "City not found. Please enter a valid city."
 
-    return location, None
+        location = {
+            "name": data[0]["name"],
+            "country": data[0].get("country", ""),
+            "state": data[0].get("state", ""),
+            "latitude": data[0]["lat"],
+            "longitude": data[0]["lon"]
+        }
+
+        return location, None
+
+    except requests.RequestException:
+
+        return None, "Unable to connect to the location service."
 
 
-# --------------------------------------------------
-# GET WEATHER
-# --------------------------------------------------
+# =========================================================
+# WEATHER FUNCTION
+# =========================================================
 
 def get_weather(latitude, longitude):
 
@@ -74,28 +423,38 @@ def get_weather(latitude, longitude):
         "units": "metric"
     }
 
-    response = requests.get(url, params=params)
+    try:
 
-    if response.status_code != 200:
-        return None, response.text
+        response = requests.get(
+            url,
+            params=params,
+            timeout=15
+        )
 
-    data = response.json()
+        if response.status_code != 200:
+            return None, response.text
 
-    weather = {
-        "temperature": data["main"]["temp"],
-        "feels_like": data["main"]["feels_like"],
-        "humidity": data["main"]["humidity"],
-        "description": data["weather"][0]["description"],
-        "wind_speed": data["wind"]["speed"],
-        "pressure": data["main"]["pressure"]
-    }
+        data = response.json()
 
-    return weather, None
+        weather = {
+            "temperature": data["main"]["temp"],
+            "feels_like": data["main"]["feels_like"],
+            "humidity": data["main"]["humidity"],
+            "description": data["weather"][0]["description"],
+            "wind_speed": data["wind"]["speed"],
+            "pressure": data["main"]["pressure"]
+        }
+
+        return weather, None
+
+    except requests.RequestException:
+
+        return None, "Unable to connect to the weather service."
 
 
-# --------------------------------------------------
-# AI ANALYSIS
-# --------------------------------------------------
+# =========================================================
+# AI SITUATION ANALYSIS
+# =========================================================
 
 def analyze_situation(location, weather):
 
@@ -119,101 +478,142 @@ Atmospheric Pressure: {weather["pressure"]} hPa
     prompt = f"""
 You are an AI Live Situation Intelligence system.
 
-Analyze the CURRENT weather conditions for the specific location below.
+Analyze the CURRENT environmental and weather conditions
+for the specific location provided below.
 
 {situation_data}
 
-Your analysis MUST be based on the actual weather values provided above.
+Your analysis MUST be based on the actual weather values provided.
 
-Do not give a generic weather response.
+Do NOT give a generic weather report.
 
 Consider:
+
 - Temperature
 - Feels-like temperature
 - Humidity
 - Weather condition
 - Wind speed
 - Atmospheric pressure
-- Possible heat stress, cold stress, rain, storms, strong winds, poor visibility, or other relevant risks
+- Heat stress
+- Cold stress
+- Rain
+- Storms
+- Strong winds
+- Poor outdoor conditions
+- Any other relevant environmental risk
 
 Return the following sections:
 
-1. Current Situation
+### Current Situation
 Explain what is happening at this specific location.
 
-2. Risk Level
-Choose exactly one:
+### Risk Level
+Choose exactly ONE:
+
 Low
 Moderate
 High
 Critical
 
-The risk level must be justified using the actual weather conditions.
+Justify the risk level using the actual weather conditions.
 
-3. Important Concerns
+### Important Concerns
 Mention only concerns that are relevant to the current conditions.
 
-4. Recommended Actions
+### Recommended Actions
 Give practical actions that a person at this location should consider.
 
-5. Outdoor Activity Advice
-Tell the user whether outdoor activity is:
-- Generally Safe
-- Use Caution
-- Not Recommended
+### Outdoor Activity Advice
+Choose exactly ONE:
 
-Keep the answer concise and location-specific.
+Generally Safe
+Use Caution
+Not Recommended
+
+Keep the analysis concise, practical, and location-specific.
+
+Do not claim certainty or emergency-level warnings unless the
+actual weather conditions justify them.
 """
 
-    response = client.models.generate_content(
-        model="gemini-3.6-flash",
-        contents=prompt
-    )
+    try:
 
-    return response.text
+        response = client.models.generate_content(
+            model="gemini-3.6-flash",
+            contents=prompt
+        )
+
+        return response.text, None
+
+    except Exception as e:
+
+        return None, str(e)
 
 
-# --------------------------------------------------
-# APPLICATION UI
-# --------------------------------------------------
+# =========================================================
+# HEADER
+# =========================================================
 
-st.title("🌍 AI Live Situation Intelligence")
-
-st.write(
-    "Enter a city to analyze its current weather conditions "
-    "and receive AI-powered risk assessment and recommendations."
+st.markdown(
+    '<div class="main-title">🌍 AI Live Situation Intelligence</div>',
+    unsafe_allow_html=True
 )
 
-st.divider()
+st.markdown(
+    '<div class="subtitle">'
+    'Real-time environmental intelligence powered by Generative AI'
+    '</div>',
+    unsafe_allow_html=True
+)
 
 
-# --------------------------------------------------
-# CITY INPUT
-# --------------------------------------------------
+# =========================================================
+# LOCATION INPUT CARD
+# =========================================================
 
-st.subheader("📍 Select Location")
+st.markdown(
+    '<div class="glass-card">',
+    unsafe_allow_html=True
+)
+
+st.markdown(
+    '<div class="section-title">📍 Select Location</div>',
+    unsafe_allow_html=True
+)
 
 city = st.text_input(
     "Enter city name",
-    placeholder="Example: Lahore, Dubai, London"
+    placeholder="Example: Lahore, Dubai, London",
+    label_visibility="collapsed"
+)
+
+st.markdown("</div>", unsafe_allow_html=True)
+
+
+# =========================================================
+# ANALYZE BUTTON
+# =========================================================
+
+analyze_button = st.button(
+    "🔍  Analyze Current Situation",
+    type="primary"
 )
 
 
-# --------------------------------------------------
-# ANALYZE BUTTON
-# --------------------------------------------------
-
-if st.button("🔍 Analyze Current Situation", type="primary"):
+if analyze_button:
 
     if not city.strip():
 
-        st.warning("Please enter a city name.")
+        st.warning(
+            "Please enter a city name."
+        )
 
     else:
 
-        # ------------------------------------------
-        # FIND LOCATION
-        # ------------------------------------------
+        # -------------------------------------------------
+        # LOCATION
+        # -------------------------------------------------
 
         with st.spinner("Finding location..."):
 
@@ -225,10 +625,6 @@ if st.button("🔍 Analyze Current Situation", type="primary"):
 
         else:
 
-            # --------------------------------------
-            # DISPLAY LOCATION
-            # --------------------------------------
-
             location_name = location["name"]
 
             if location["state"]:
@@ -236,18 +632,41 @@ if st.button("🔍 Analyze Current Situation", type="primary"):
 
             location_name += f", {location['country']}"
 
-            st.success(f"Location found: {location_name}")
+            st.markdown(
+                f"""
+                <div class="glass-card">
 
-            st.caption(
-                f"Coordinates: "
-                f"{location['latitude']:.4f}, "
-                f"{location['longitude']:.4f}"
+                <div class="section-title">
+                📍 Location Detected
+                </div>
+
+                <div style="
+                    font-size: 1.25rem;
+                    font-weight: 700;
+                    color: white;
+                    margin-bottom: 8px;
+                ">
+                    {location_name}
+                </div>
+
+                <div style="
+                    color: #aaa1c7;
+                    font-size: 0.9rem;
+                ">
+                    Coordinates:
+                    {location['latitude']:.4f},
+                    {location['longitude']:.4f}
+                </div>
+
+                </div>
+                """,
+                unsafe_allow_html=True
             )
 
 
-            # --------------------------------------
-            # GET WEATHER
-            # --------------------------------------
+            # -------------------------------------------------
+            # WEATHER
+            # -------------------------------------------------
 
             with st.spinner("Getting live weather data..."):
 
@@ -258,74 +677,144 @@ if st.button("🔍 Analyze Current Situation", type="primary"):
 
             if weather_error:
 
-                st.error("Unable to retrieve weather data.")
+                st.error(
+                    "Unable to retrieve live weather data."
+                )
+
                 st.code(weather_error)
 
             else:
 
-                # ----------------------------------
-                # WEATHER DISPLAY
-                # ----------------------------------
+                # -------------------------------------------------
+                # WEATHER SECTION
+                # -------------------------------------------------
 
-                st.subheader("🌦️ Live Weather")
+                st.markdown(
+                    '<div class="section-title">'
+                    '🌦️ Live Weather'
+                    '</div>',
+                    unsafe_allow_html=True
+                )
 
                 col1, col2, col3, col4 = st.columns(4)
 
                 with col1:
+
                     st.metric(
                         "Temperature",
                         f'{weather["temperature"]} °C'
                     )
 
                 with col2:
+
                     st.metric(
                         "Feels Like",
                         f'{weather["feels_like"]} °C'
                     )
 
                 with col3:
+
                     st.metric(
                         "Humidity",
                         f'{weather["humidity"]} %'
                     )
 
                 with col4:
+
                     st.metric(
                         "Wind Speed",
                         f'{weather["wind_speed"]} m/s'
                     )
 
-                st.info(
-                    f"Current condition: "
-                    f"**{weather['description'].title()}**"
+                st.markdown(
+                    f"""
+                    <div class="glass-card"
+                         style="text-align:center;">
+
+                        <div style="
+                            color:#a78bfa;
+                            font-size:0.9rem;
+                            margin-bottom:6px;
+                        ">
+                            CURRENT CONDITION
+                        </div>
+
+                        <div style="
+                            color:white;
+                            font-size:1.35rem;
+                            font-weight:700;
+                        ">
+                            {weather["description"].title()}
+                        </div>
+
+                        <div style="
+                            color:#9f96b8;
+                            font-size:0.85rem;
+                            margin-top:8px;
+                        ">
+                            Atmospheric Pressure:
+                            {weather["pressure"]} hPa
+                        </div>
+
+                    </div>
+                    """,
+                    unsafe_allow_html=True
                 )
 
 
-                # ----------------------------------
+                # -------------------------------------------------
                 # AI ANALYSIS
-                # ----------------------------------
+                # -------------------------------------------------
 
-                st.subheader("🧠 AI Situation Intelligence")
+                st.markdown(
+                    '<div class="section-title">'
+                    '🧠 AI Situation Intelligence'
+                    '</div>',
+                    unsafe_allow_html=True
+                )
 
                 with st.spinner(
                     "Gemini is analyzing the current situation..."
                 ):
 
-                    analysis = analyze_situation(
+                    analysis, analysis_error = analyze_situation(
                         location,
                         weather
                     )
 
-                st.markdown(analysis)
+                if analysis_error:
+
+                    st.error(
+                        "Unable to generate AI analysis."
+                    )
+
+                    st.code(analysis_error)
+
+                else:
+
+                    st.markdown(
+                        '<div class="ai-card">',
+                        unsafe_allow_html=True
+                    )
+
+                    st.markdown(analysis)
+
+                    st.markdown(
+                        "</div>",
+                        unsafe_allow_html=True
+                    )
 
 
-# --------------------------------------------------
+# =========================================================
 # FOOTER
-# --------------------------------------------------
+# =========================================================
 
-st.divider()
-
-st.caption(
-    "AI Live Situation Intelligence | "
-    "Generative AI Hackathon Project"
+st.markdown(
+    """
+    <div class="footer">
+        AI Live Situation Intelligence ·
+        Real-time data + Generative AI
+    </div>
+    """,
+    unsafe_allow_html=True
 )
