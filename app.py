@@ -1,5 +1,8 @@
-import streamlit as st
+import html
+import re
+
 import requests
+import streamlit as st
 from google import genai
 
 
@@ -16,335 +19,621 @@ st.set_page_config(
 
 
 # =========================================================
-# CUSTOM GLASSMORPHISM THEME
+# CUSTOM THEME
 # =========================================================
 
 st.markdown(
     """
     <style>
 
-    /* -----------------------------------------------------
-       GLOBAL APP
-    ----------------------------------------------------- */
+    /* =====================================================
+       GLOBAL
+       ===================================================== */
+
+    html {
+        color-scheme: dark;
+    }
+
+    body {
+        background: #090414 !important;
+    }
 
     .stApp {
         background:
             radial-gradient(
-                circle at 10% 10%,
-                rgba(124, 58, 237, 0.30),
-                transparent 30%
-            ),
-            radial-gradient(
-                circle at 90% 20%,
-                rgba(99, 102, 241, 0.20),
+                circle at 10% 5%,
+                rgba(124, 58, 237, 0.28),
                 transparent 28%
             ),
             radial-gradient(
+                circle at 90% 15%,
+                rgba(99, 102, 241, 0.20),
+                transparent 30%
+            ),
+            radial-gradient(
                 circle at 50% 100%,
-                rgba(168, 85, 247, 0.18),
+                rgba(168, 85, 247, 0.15),
                 transparent 35%
             ),
             linear-gradient(
                 135deg,
-                #080414 0%,
-                #110725 45%,
+                #090414 0%,
+                #120725 48%,
                 #1b0b38 100%
-            );
+            ) !important;
 
-        color: #f8f7ff;
         min-height: 100vh;
+        color: #ffffff !important;
     }
 
+    [data-testid="stAppViewContainer"] {
+        background: transparent !important;
+    }
 
-    /* -----------------------------------------------------
-       FORCE DARK THEME
-    ----------------------------------------------------- */
-
-    html,
-    body,
-    [data-testid="stAppViewContainer"],
     [data-testid="stHeader"] {
         background: transparent !important;
     }
 
-    [data-testid="stAppViewContainer"] {
-        color: #f8f7ff !important;
+    [data-testid="stToolbar"] {
+        background: transparent !important;
     }
-
-    [data-testid="stHeader"] {
-        background: rgba(0, 0, 0, 0) !important;
-    }
-
-
-    /* -----------------------------------------------------
-       MAIN CONTENT WIDTH
-    ----------------------------------------------------- */
 
     .block-container {
-        max-width: 1200px;
-        padding-top: 2.5rem;
-        padding-bottom: 3rem;
+        max-width: 1050px !important;
+        padding-top: 42px !important;
+        padding-bottom: 45px !important;
     }
 
 
-    /* -----------------------------------------------------
-       HEADER
-    ----------------------------------------------------- */
+    /* =====================================================
+       REMOVE UNNECESSARY STREAMLIT SPACING
+       ===================================================== */
 
-    .main-title {
+    [data-testid="stVerticalBlock"] {
+        gap: 0.65rem;
+    }
+
+    div[data-testid="stElementContainer"] {
+        margin-bottom: 0.2rem;
+    }
+
+
+    /* =====================================================
+       HERO
+       ===================================================== */
+
+    .hero {
         text-align: center;
-        font-size: 3rem;
-        font-weight: 800;
-        letter-spacing: -1px;
-        margin-bottom: 0.3rem;
+        margin-bottom: 34px;
+    }
 
-        background:
-            linear-gradient(
-                90deg,
-                #ffffff,
-                #d8b4fe,
-                #a78bfa,
-                #93c5fd
-            );
+    .hero-title {
+        font-size: 42px;
+        line-height: 1.15;
+        font-weight: 800;
+        letter-spacing: -1.2px;
+        margin: 0;
+        color: #ffffff;
+
+        background: linear-gradient(
+            90deg,
+            #ffffff 0%,
+            #ddd6fe 35%,
+            #a78bfa 65%,
+            #c4b5fd 100%
+        );
 
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
     }
 
-    .subtitle {
-        text-align: center;
-        color: #c4b5fd;
-        font-size: 1.05rem;
-        margin-bottom: 2rem;
+    .hero-subtitle {
+        margin-top: 12px;
+        font-size: 16px;
+        line-height: 1.6;
+        font-weight: 400;
+        color: #e2e8f0 !important;
     }
 
 
-    /* -----------------------------------------------------
-       GLASS CARDS
-    ----------------------------------------------------- */
+    /* =====================================================
+       GLASS CARD
+       ===================================================== */
 
     .glass-card {
         background: rgba(255, 255, 255, 0.065);
-        border: 1px solid rgba(255, 255, 255, 0.13);
-        border-radius: 22px;
+
+        border: 1px solid rgba(255, 255, 255, 0.14);
+
+        border-radius: 20px;
+
         padding: 24px;
-        margin-bottom: 20px;
+
+        margin: 0 0 24px 0;
 
         backdrop-filter: blur(18px);
         -webkit-backdrop-filter: blur(18px);
 
         box-shadow:
-            0 8px 32px rgba(0, 0, 0, 0.30),
+            0 10px 35px rgba(0, 0, 0, 0.28),
             inset 0 1px 0 rgba(255, 255, 255, 0.05);
     }
 
 
-    /* -----------------------------------------------------
-       SECTION HEADINGS
-    ----------------------------------------------------- */
+    /* =====================================================
+       SECTION TITLES
+       ===================================================== */
 
     .section-title {
-        color: #e9d5ff;
-        font-size: 1.25rem;
+        font-size: 20px;
+        line-height: 1.4;
         font-weight: 700;
-        margin-bottom: 12px;
+        color: #ffffff !important;
+
+        margin: 0 0 16px 0;
+    }
+
+    .section-description {
+        font-size: 15px;
+        line-height: 1.65;
+        color: #e2e8f0 !important;
+
+        margin-bottom: 18px;
     }
 
 
-    /* -----------------------------------------------------
-       STREAMLIT TEXT INPUTS
-    ----------------------------------------------------- */
+    /* =====================================================
+       INPUT FIELD
+       ===================================================== */
+
+    div[data-testid="stTextInput"] {
+        margin-bottom: 0 !important;
+    }
+
+    div[data-testid="stTextInput"] label {
+        color: #e2e8f0 !important;
+        font-size: 14px !important;
+        font-weight: 600 !important;
+    }
+
+    div[data-testid="stTextInput"] > div {
+        background: transparent !important;
+    }
 
     div[data-baseweb="input"] {
-        background: rgba(255, 255, 255, 0.07) !important;
-        border: 1px solid rgba(255, 255, 255, 0.15) !important;
+        background: rgba(9, 4, 20, 0.72) !important;
+
+        border: 1px solid rgba(196, 181, 253, 0.22) !important;
+
         border-radius: 14px !important;
+
+        min-height: 50px !important;
+
+        box-shadow:
+            inset 0 1px 2px rgba(0, 0, 0, 0.25) !important;
     }
 
     div[data-baseweb="input"]:focus-within {
-        border: 1px solid rgba(167, 139, 250, 0.8) !important;
-        box-shadow: 0 0 0 1px rgba(167, 139, 250, 0.25) !important;
+        background: rgba(12, 6, 27, 0.90) !important;
+
+        border-color: #a78bfa !important;
+
+        box-shadow:
+            0 0 0 2px rgba(167, 139, 250, 0.15),
+            0 0 20px rgba(124, 58, 237, 0.18) !important;
     }
 
     div[data-baseweb="input"] input {
-        color: #ffffff !important;
         background: transparent !important;
+
+        color: #ffffff !important;
+
+        font-size: 16px !important;
+
+        font-weight: 400 !important;
     }
 
     div[data-baseweb="input"] input::placeholder {
         color: #a8a0bd !important;
+
+        opacity: 1 !important;
     }
 
 
-    /* -----------------------------------------------------
-       BUTTON
-    ----------------------------------------------------- */
+    /* =====================================================
+       ANALYZE BUTTON
+       ===================================================== */
+
+    div.stButton {
+        margin-top: 12px;
+        margin-bottom: 0;
+    }
 
     div.stButton > button {
-        width: 100%;
-        min-height: 52px;
+        width: 100% !important;
 
-        border: none !important;
-        border-radius: 15px !important;
+        min-height: 50px !important;
+
+        border: 0 !important;
+
+        border-radius: 14px !important;
 
         background:
             linear-gradient(
                 135deg,
-                #7c3aed,
-                #8b5cf6,
-                #6366f1
+                #7c3aed 0%,
+                #8b5cf6 50%,
+                #6366f1 100%
             ) !important;
 
-        color: white !important;
-        font-size: 1rem !important;
+        color: #ffffff !important;
+
+        font-size: 16px !important;
+
         font-weight: 700 !important;
 
         box-shadow:
-            0 8px 25px rgba(124, 58, 237, 0.35);
+            0 8px 25px rgba(124, 58, 237, 0.30) !important;
 
-        transition: all 0.25s ease;
+        transition:
+            transform 0.2s ease,
+            box-shadow 0.2s ease !important;
     }
 
     div.stButton > button:hover {
         transform: translateY(-2px);
 
         box-shadow:
-            0 12px 30px rgba(124, 58, 237, 0.50);
+            0 12px 32px rgba(124, 58, 237, 0.45) !important;
+
+        border: 0 !important;
+    }
+
+    div.stButton > button:focus {
+        border: 0 !important;
+
+        outline: none !important;
     }
 
 
-    /* -----------------------------------------------------
-       METRIC CARDS
-    ----------------------------------------------------- */
+    /* =====================================================
+       LOCATION CARD
+       ===================================================== */
 
-    div[data-testid="metric-container"] {
-        background: rgba(255, 255, 255, 0.065) !important;
+    .location-name {
+        font-size: 21px;
+        line-height: 1.4;
+        font-weight: 700;
+        color: #ffffff !important;
 
-        border: 1px solid rgba(255, 255, 255, 0.12) !important;
+        margin-bottom: 8px;
+    }
 
-        border-radius: 18px !important;
+    .coordinates {
+        font-size: 15px;
+        line-height: 1.6;
+        color: #e2e8f0 !important;
+    }
 
-        padding: 18px !important;
 
-        backdrop-filter: blur(15px);
-        -webkit-backdrop-filter: blur(15px);
+    /* =====================================================
+       WEATHER CARDS
+       ===================================================== */
+
+    .weather-grid {
+        display: grid;
+
+        grid-template-columns:
+            repeat(4, minmax(0, 1fr));
+
+        gap: 16px;
+
+        margin-bottom: 24px;
+    }
+
+    .weather-card {
+        background: rgba(255, 255, 255, 0.065);
+
+        border: 1px solid rgba(255, 255, 255, 0.13);
+
+        border-radius: 18px;
+
+        padding: 20px;
+
+        min-height: 112px;
+
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
 
         box-shadow:
-            0 8px 25px rgba(0, 0, 0, 0.20);
+            0 8px 25px rgba(0, 0, 0, 0.22);
     }
 
-    div[data-testid="stMetricLabel"] {
+    .weather-label {
+        font-size: 14px;
+        line-height: 1.4;
+
         color: #c4b5fd !important;
+
+        font-weight: 600;
+
+        margin-bottom: 9px;
     }
 
-    div[data-testid="stMetricValue"] {
+    .weather-value {
+        font-size: 24px;
+        line-height: 1.25;
+
         color: #ffffff !important;
-        font-weight: 700 !important;
+
+        font-weight: 750;
     }
 
 
-    /* -----------------------------------------------------
-       SUCCESS / INFO / WARNING / ERROR
-    ----------------------------------------------------- */
+    /* =====================================================
+       CURRENT CONDITION
+       ===================================================== */
 
-    div[data-testid="stAlert"] {
-        border-radius: 15px !important;
+    .condition-card {
+        background:
+            linear-gradient(
+                135deg,
+                rgba(124, 58, 237, 0.13),
+                rgba(99, 102, 241, 0.06)
+            );
 
-        background: rgba(255, 255, 255, 0.07) !important;
+        border: 1px solid rgba(167, 139, 250, 0.22);
 
-        border: 1px solid rgba(255, 255, 255, 0.12) !important;
+        border-radius: 20px;
 
-        backdrop-filter: blur(15px);
-        -webkit-backdrop-filter: blur(15px);
+        padding: 22px 24px;
+
+        margin-bottom: 28px;
+
+        text-align: center;
+
+        backdrop-filter: blur(18px);
+        -webkit-backdrop-filter: blur(18px);
+    }
+
+    .condition-label {
+        font-size: 13px;
+        letter-spacing: 1px;
+        font-weight: 700;
+
+        color: #c4b5fd !important;
+
+        margin-bottom: 8px;
+    }
+
+    .condition-value {
+        font-size: 24px;
+        font-weight: 750;
+
+        color: #ffffff !important;
+
+        margin-bottom: 8px;
+    }
+
+    .condition-detail {
+        font-size: 15px;
+        line-height: 1.6;
+
+        color: #e2e8f0 !important;
     }
 
 
-    /* -----------------------------------------------------
-       AI ANALYSIS
-    ----------------------------------------------------- */
+    /* =====================================================
+       AI SECTION
+       ===================================================== */
+
+    .ai-header {
+        font-size: 21px;
+        font-weight: 700;
+
+        color: #ffffff !important;
+
+        margin: 0 0 16px 0;
+    }
 
     .ai-card {
         background:
             linear-gradient(
                 135deg,
-                rgba(124, 58, 237, 0.14),
-                rgba(99, 102, 241, 0.07)
+                rgba(124, 58, 237, 0.15),
+                rgba(99, 102, 241, 0.08)
             );
 
-        border: 1px solid rgba(167, 139, 250, 0.25);
+        border: 1px solid rgba(167, 139, 250, 0.24);
 
-        border-radius: 22px;
+        border-radius: 20px;
 
-        padding: 28px;
+        padding: 26px;
 
-        margin-top: 10px;
+        margin-bottom: 24px;
 
         backdrop-filter: blur(20px);
         -webkit-backdrop-filter: blur(20px);
 
         box-shadow:
-            0 10px 40px rgba(0, 0, 0, 0.28);
+            0 10px 35px rgba(0, 0, 0, 0.25);
+    }
+
+    .ai-card h3 {
+        color: #ffffff !important;
+
+        font-size: 18px !important;
+
+        line-height: 1.45 !important;
+
+        margin-top: 20px !important;
+
+        margin-bottom: 9px !important;
+    }
+
+    .ai-card h3:first-child {
+        margin-top: 0 !important;
+    }
+
+    .ai-card p {
+        color: #e2e8f0 !important;
+
+        font-size: 15px !important;
+
+        line-height: 1.75 !important;
+
+        margin-top: 7px !important;
+
+        margin-bottom: 12px !important;
+    }
+
+    .ai-card ul {
+        margin-top: 6px !important;
+
+        margin-bottom: 15px !important;
+
+        padding-left: 22px !important;
+    }
+
+    .ai-card li {
+        color: #e2e8f0 !important;
+
+        font-size: 15px !important;
+
+        line-height: 1.7 !important;
+
+        margin-bottom: 5px !important;
+    }
+
+    .ai-card strong {
+        color: #ffffff !important;
     }
 
 
-    /* -----------------------------------------------------
-       MARKDOWN TEXT
-    ----------------------------------------------------- */
+    /* =====================================================
+       STREAMLIT MARKDOWN
+       ===================================================== */
 
-    [data-testid="stMarkdownContainer"] p,
+    [data-testid="stMarkdownContainer"] p {
+        color: #e2e8f0;
+    }
+
     [data-testid="stMarkdownContainer"] li {
-        color: #e9e7f2;
+        color: #e2e8f0;
     }
 
     [data-testid="stMarkdownContainer"] strong {
         color: #ffffff;
     }
 
-    h1, h2, h3, h4 {
+    [data-testid="stMarkdownContainer"] h1,
+    [data-testid="stMarkdownContainer"] h2,
+    [data-testid="stMarkdownContainer"] h3,
+    [data-testid="stMarkdownContainer"] h4 {
         color: #ffffff !important;
     }
 
 
-    /* -----------------------------------------------------
-       DIVIDER
-    ----------------------------------------------------- */
+    /* =====================================================
+       ALERTS
+       ===================================================== */
 
-    hr {
-        border-color: rgba(255, 255, 255, 0.10) !important;
+    [data-testid="stAlert"] {
+        border-radius: 14px !important;
+
+        background: rgba(255, 255, 255, 0.07) !important;
+
+        border: 1px solid rgba(255, 255, 255, 0.13) !important;
+
+        color: #ffffff !important;
+    }
+
+    [data-testid="stAlert"] p {
+        color: #e2e8f0 !important;
+
+        font-size: 15px !important;
     }
 
 
-    /* -----------------------------------------------------
+    /* =====================================================
+       SPINNER
+       ===================================================== */
+
+    [data-testid="stSpinner"] {
+        color: #e2e8f0 !important;
+    }
+
+
+    /* =====================================================
        FOOTER
-    ----------------------------------------------------- */
+       ===================================================== */
 
     .footer {
         text-align: center;
-        color: #8f87a8;
-        font-size: 0.85rem;
-        margin-top: 30px;
+
+        color: #cbd5e1 !important;
+
+        font-size: 14px;
+
+        line-height: 1.6;
+
+        margin-top: 35px;
+
+        padding-top: 22px;
+
+        border-top:
+            1px solid rgba(255, 255, 255, 0.10);
     }
 
 
-    /* -----------------------------------------------------
-       MOBILE RESPONSIVENESS
-    ----------------------------------------------------- */
+    /* =====================================================
+       RESPONSIVE
+       ===================================================== */
 
-    @media (max-width: 768px) {
+    @media (max-width: 850px) {
+
+        .hero-title {
+            font-size: 34px;
+        }
+
+        .weather-grid {
+            grid-template-columns:
+                repeat(2, minmax(0, 1fr));
+        }
+    }
+
+
+    @media (max-width: 560px) {
 
         .block-container {
-            padding-left: 1rem;
-            padding-right: 1rem;
+            padding-left: 18px !important;
+            padding-right: 18px !important;
+            padding-top: 28px !important;
         }
 
-        .main-title {
-            font-size: 2.1rem;
+        .hero-title {
+            font-size: 28px;
         }
 
-        .subtitle {
-            font-size: 0.95rem;
+        .hero-subtitle {
+            font-size: 15px;
         }
 
+        .glass-card {
+            padding: 20px;
+        }
+
+        .weather-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .weather-value {
+            font-size: 22px;
+        }
+
+        .ai-card {
+            padding: 20px;
+        }
     }
 
     </style>
@@ -354,7 +643,7 @@ st.markdown(
 
 
 # =========================================================
-# API KEYS
+# API CONFIGURATION
 # =========================================================
 
 GEMINI_API_KEY = st.secrets["GEMINI_API_KEY"]
@@ -364,7 +653,7 @@ client = genai.Client(api_key=GEMINI_API_KEY)
 
 
 # =========================================================
-# LOCATION FUNCTION
+# LOCATION
 # =========================================================
 
 def get_location(city):
@@ -404,12 +693,11 @@ def get_location(city):
         return location, None
 
     except requests.RequestException:
-
         return None, "Unable to connect to the location service."
 
 
 # =========================================================
-# WEATHER FUNCTION
+# WEATHER
 # =========================================================
 
 def get_weather(latitude, longitude):
@@ -448,12 +736,11 @@ def get_weather(latitude, longitude):
         return weather, None
 
     except requests.RequestException:
-
         return None, "Unable to connect to the weather service."
 
 
 # =========================================================
-# AI SITUATION ANALYSIS
+# GEMINI ANALYSIS
 # =========================================================
 
 def analyze_situation(location, weather):
@@ -501,14 +788,16 @@ Consider:
 - Storms
 - Strong winds
 - Poor outdoor conditions
-- Any other relevant environmental risk
+- Other relevant environmental risks
 
-Return the following sections:
+Return exactly these sections:
 
 ### Current Situation
+
 Explain what is happening at this specific location.
 
 ### Risk Level
+
 Choose exactly ONE:
 
 Low
@@ -519,12 +808,15 @@ Critical
 Justify the risk level using the actual weather conditions.
 
 ### Important Concerns
-Mention only concerns that are relevant to the current conditions.
+
+Mention only concerns relevant to the current conditions.
 
 ### Recommended Actions
+
 Give practical actions that a person at this location should consider.
 
 ### Outdoor Activity Advice
+
 Choose exactly ONE:
 
 Generally Safe
@@ -533,8 +825,8 @@ Not Recommended
 
 Keep the analysis concise, practical, and location-specific.
 
-Do not claim certainty or emergency-level warnings unless the
-actual weather conditions justify them.
+Do not claim certainty or emergency-level warnings unless
+the actual weather conditions justify them.
 """
 
     try:
@@ -552,54 +844,158 @@ actual weather conditions justify them.
 
 
 # =========================================================
-# HEADER
+# CONVERT GEMINI MARKDOWN TO SAFE HTML
+# =========================================================
+
+def render_ai_analysis(markdown_text):
+
+    if not markdown_text:
+        return ""
+
+    lines = markdown_text.splitlines()
+
+    output = []
+
+    in_list = False
+
+    for line in lines:
+
+        line = line.strip()
+
+        if not line:
+            if in_list:
+                output.append("</ul>")
+                in_list = False
+
+            continue
+
+        # Headings
+        if line.startswith("### "):
+
+            if in_list:
+                output.append("</ul>")
+                in_list = False
+
+            heading = html.escape(
+                line[4:].strip()
+            )
+
+            output.append(
+                f"<h3>{heading}</h3>"
+            )
+
+            continue
+
+        # Bullet points
+        if line.startswith("- ") or line.startswith("* "):
+
+            if not in_list:
+                output.append("<ul>")
+                in_list = True
+
+            item = html.escape(
+                line[2:].strip()
+            )
+
+            item = re.sub(
+                r"\*\*(.*?)\*\*",
+                r"<strong>\1</strong>",
+                item
+            )
+
+            output.append(
+                f"<li>{item}</li>"
+            )
+
+            continue
+
+        # Normal paragraph
+        if in_list:
+            output.append("</ul>")
+            in_list = False
+
+        paragraph = html.escape(line)
+
+        paragraph = re.sub(
+            r"\*\*(.*?)\*\*",
+            r"<strong>\1</strong>",
+            paragraph
+        )
+
+        output.append(
+            f"<p>{paragraph}</p>"
+        )
+
+    if in_list:
+        output.append("</ul>")
+
+    return "".join(output)
+
+
+# =========================================================
+# HERO
 # =========================================================
 
 st.markdown(
-    '<div class="main-title">🌍 AI Live Situation Intelligence</div>',
-    unsafe_allow_html=True
-)
+    """
+    <div class="hero">
 
-st.markdown(
-    '<div class="subtitle">'
-    'Real-time environmental intelligence powered by Generative AI'
-    '</div>',
+        <div class="hero-title">
+            🌍 AI Live Situation Intelligence
+        </div>
+
+        <div class="hero-subtitle">
+            Real-time environmental intelligence powered by Generative AI
+        </div>
+
+    </div>
+    """,
     unsafe_allow_html=True
 )
 
 
 # =========================================================
-# LOCATION INPUT CARD
+# LOCATION INPUT
 # =========================================================
 
 st.markdown(
-    '<div class="glass-card">',
-    unsafe_allow_html=True
-)
+    """
+    <div class="glass-card">
 
-st.markdown(
-    '<div class="section-title">📍 Select Location</div>',
+        <div class="section-title">
+            📍 Select Location
+        </div>
+
+        <div class="section-description">
+            Enter a city to analyze its current environmental
+            conditions and receive an AI-powered situation assessment.
+        </div>
+
+    """,
     unsafe_allow_html=True
 )
 
 city = st.text_input(
-    "Enter city name",
+    "City",
     placeholder="Example: Lahore, Dubai, London",
     label_visibility="collapsed"
 )
 
-st.markdown("</div>", unsafe_allow_html=True)
+st.markdown(
+    "</div>",
+    unsafe_allow_html=True
+)
 
-
-# =========================================================
-# ANALYZE BUTTON
-# =========================================================
 
 analyze_button = st.button(
     "🔍  Analyze Current Situation",
     type="primary"
 )
 
+
+# =========================================================
+# ANALYSIS
+# =========================================================
 
 if analyze_button:
 
@@ -617,7 +1013,9 @@ if analyze_button:
 
         with st.spinner("Finding location..."):
 
-            location, location_error = get_location(city)
+            location, location_error = get_location(
+                city.strip()
+            )
 
         if location_error:
 
@@ -628,35 +1026,35 @@ if analyze_button:
             location_name = location["name"]
 
             if location["state"]:
-                location_name += f", {location['state']}"
+                location_name += (
+                    f", {location['state']}"
+                )
 
-            location_name += f", {location['country']}"
+            location_name += (
+                f", {location['country']}"
+            )
+
+            safe_location_name = html.escape(
+                location_name
+            )
 
             st.markdown(
                 f"""
                 <div class="glass-card">
 
-                <div class="section-title">
-                📍 Location Detected
-                </div>
+                    <div class="section-title">
+                        📍 Location Detected
+                    </div>
 
-                <div style="
-                    font-size: 1.25rem;
-                    font-weight: 700;
-                    color: white;
-                    margin-bottom: 8px;
-                ">
-                    {location_name}
-                </div>
+                    <div class="location-name">
+                        {safe_location_name}
+                    </div>
 
-                <div style="
-                    color: #aaa1c7;
-                    font-size: 0.9rem;
-                ">
-                    Coordinates:
-                    {location['latitude']:.4f},
-                    {location['longitude']:.4f}
-                </div>
+                    <div class="coordinates">
+                        Coordinates:
+                        {location['latitude']:.4f},
+                        {location['longitude']:.4f}
+                    </div>
 
                 </div>
                 """,
@@ -668,7 +1066,9 @@ if analyze_button:
             # WEATHER
             # -------------------------------------------------
 
-            with st.spinner("Getting live weather data..."):
+            with st.spinner(
+                "Getting live weather data..."
+            ):
 
                 weather, weather_error = get_weather(
                     location["latitude"],
@@ -685,73 +1085,96 @@ if analyze_button:
 
             else:
 
-                # -------------------------------------------------
-                # WEATHER SECTION
-                # -------------------------------------------------
-
                 st.markdown(
-                    '<div class="section-title">'
-                    '🌦️ Live Weather'
-                    '</div>',
+                    """
+                    <div class="section-title">
+                        🌦️ Live Weather
+                    </div>
+                    """,
                     unsafe_allow_html=True
                 )
 
-                col1, col2, col3, col4 = st.columns(4)
 
-                with col1:
+                # -------------------------------------------------
+                # WEATHER GRID
+                # -------------------------------------------------
 
-                    st.metric(
-                        "Temperature",
-                        f'{weather["temperature"]} °C'
-                    )
+                weather_html = f"""
+                <div class="weather-grid">
 
-                with col2:
+                    <div class="weather-card">
+                        <div class="weather-label">
+                            Temperature
+                        </div>
 
-                    st.metric(
-                        "Feels Like",
-                        f'{weather["feels_like"]} °C'
-                    )
+                        <div class="weather-value">
+                            {weather["temperature"]} °C
+                        </div>
+                    </div>
 
-                with col3:
 
-                    st.metric(
-                        "Humidity",
-                        f'{weather["humidity"]} %'
-                    )
+                    <div class="weather-card">
+                        <div class="weather-label">
+                            Feels Like
+                        </div>
 
-                with col4:
+                        <div class="weather-value">
+                            {weather["feels_like"]} °C
+                        </div>
+                    </div>
 
-                    st.metric(
-                        "Wind Speed",
-                        f'{weather["wind_speed"]} m/s'
-                    )
+
+                    <div class="weather-card">
+                        <div class="weather-label">
+                            Humidity
+                        </div>
+
+                        <div class="weather-value">
+                            {weather["humidity"]} %
+                        </div>
+                    </div>
+
+
+                    <div class="weather-card">
+                        <div class="weather-label">
+                            Wind Speed
+                        </div>
+
+                        <div class="weather-value">
+                            {weather["wind_speed"]} m/s
+                        </div>
+                    </div>
+
+                </div>
+                """
+
+                st.markdown(
+                    weather_html,
+                    unsafe_allow_html=True
+                )
+
+
+                # -------------------------------------------------
+                # CURRENT CONDITION
+                # -------------------------------------------------
+
+                safe_description = html.escape(
+                    weather["description"].title()
+                )
 
                 st.markdown(
                     f"""
-                    <div class="glass-card"
-                         style="text-align:center;">
+                    <div class="condition-card">
 
-                        <div style="
-                            color:#a78bfa;
-                            font-size:0.9rem;
-                            margin-bottom:6px;
-                        ">
+                        <div class="condition-label">
                             CURRENT CONDITION
                         </div>
 
-                        <div style="
-                            color:white;
-                            font-size:1.35rem;
-                            font-weight:700;
-                        ">
-                            {weather["description"].title()}
+                        <div class="condition-value">
+                            {safe_description}
                         </div>
 
-                        <div style="
-                            color:#9f96b8;
-                            font-size:0.85rem;
-                            margin-top:8px;
-                        ">
+                        <div class="condition-detail">
                             Atmospheric Pressure:
                             {weather["pressure"]} hPa
                         </div>
@@ -767,11 +1190,14 @@ if analyze_button:
                 # -------------------------------------------------
 
                 st.markdown(
-                    '<div class="section-title">'
-                    '🧠 AI Situation Intelligence'
-                    '</div>',
+                    """
+                    <div class="ai-header">
+                        🧠 AI Situation Intelligence
+                    </div>
+                    """,
                     unsafe_allow_html=True
                 )
+
 
                 with st.spinner(
                     "Gemini is analyzing the current situation..."
@@ -782,25 +1208,31 @@ if analyze_button:
                         weather
                     )
 
+
                 if analysis_error:
 
                     st.error(
                         "Unable to generate AI analysis."
                     )
 
-                    st.code(analysis_error)
+                    st.code(
+                        analysis_error
+                    )
 
                 else:
 
-                    st.markdown(
-                        '<div class="ai-card">',
-                        unsafe_allow_html=True
+                    analysis_html = render_ai_analysis(
+                        analysis
                     )
 
-                    st.markdown(analysis)
-
                     st.markdown(
-                        "</div>",
+                        f"""
+                        <div class="ai-card">
+
+                            {analysis_html}
+
+                        </div>
+                        """,
                         unsafe_allow_html=True
                     )
 
